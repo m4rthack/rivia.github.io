@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rivia</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .artist-info h1 {
+            color: #333;
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .artist-info p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .nav-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .nav-btn:not(.active) {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .stat-card i {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+        }
+
+        .stat-card.instagram i { color: #E1306C; }
+        .stat-card.youtube i { color: #FF0000; }
+        .stat-card.spotify i { color: #1DB954; }
+        .stat-card.tiktok i { color: #000000; }
+        .stat-card.revenue i { color: #4CAF50; }
+        .stat-card.growth i { color: #2196F3; }
+
+        .stat-card h3 {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .stat-card .value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .stat-card .change {
+            margin-top: 10px;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .change.positive { color: #4CAF50; }
+        .change.negative { color: #f44336; }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .chart-card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+        }
+
+        .finance-header {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .export-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .export-btn.excel {
+            background: #217346;
+            color: white;
+        }
+
+        .export-btn.pdf {
+            background: #DC3545;
+            color: white;
+        }
+
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .finance-table {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9em;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .total-row {
+            font-weight: bold;
+            background-color: #f0f0f0;
+            font-size: 1.1em;
+        }
+
+        /* Estilos para la página de analíticas */
+        .analytics-controls {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .tab-btn {
+            padding: 12px 25px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-btn:hover {
+            color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .add-btn {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .filters {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .data-list {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .data-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s;
+        }
+
+        .data-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .data-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .data-item-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .data-item-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .delete-btn {
+            padding: 6px 12px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .delete-btn:hover {
+            background: #c82333;
+        }
+
+        .data-item-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .info-value {
+            color: #333;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .empty-state i {
+            font-size: 4em;
+            margin-bottom: 15px;
+            opacity: 0.3;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-content {
+                flex-direction: column;
+            }
+            
+            .nav-buttons {
+                width: 100%;
+                flex-direction: column;
+            }
+            
+            .nav-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div class="artist-info">
+                    <h1><i class="fas fa-music"></i> Rivia</h1>
+                    <p>Panel de Control - Redes Sociales y Finanzas</p>
+                </div>
+                <div class="nav-buttons">
+                    <button class="nav-btn active" onclick="showPage('overview')">
+                        <i class="fas fa-chart-line"></i> Resumen
+                    </button>
+                    <button class="nav-btn" onclick="showPage('analytics')">
+                        <i class="fas fa-music"></i> Releases & Tours
+                    </button>
+                    <button class="nav-btn" onclick="showPage('finance')">
+                        <i class="fas fa-euro-sign"></i> Finanzas
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Página de Resumen -->
+        <div id="overview" class="page active">
+            <div class="stats-grid">
+                <div class="stat-card instagram">
+                    <i class="fab fa-instagram"></i>
+                    <h3>Instagram</h3>
+                    <div class="value" id="instagram-followers">0</div>
+                    <div class="change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span id="instagram-growth">0%</span> este mes
+                    </div>
+                </div>
+
+                <div class="stat-card youtube">
+                    <i class="fab fa-youtube"></i>
+                    <h3>YouTube</h3>
+                    <div class="value" id="youtube-subs">0</div>
+                    <div class="change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span id="youtube-growth">0%</span> este mes
+                    </div>
+                </div>
+
+                <div class="stat-card spotify">
+                    <i class="fab fa-spotify"></i>
+                    <h3>Spotify</h3>
+                    <div class="value" id="spotify-listeners">0</div>
+                    <div class="change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span id="spotify-growth">0%</span> este mes
+                    </div>
+                </div>
+
+                <div class="stat-card tiktok">
+                    <i class="fab fa-tiktok"></i>
+                    <h3>TikTok</h3>
+                    <div class="value" id="tiktok-followers">0</div>
+                    <div class="change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span id="tiktok-growth">0%</span> este mes
+                    </div>
+                </div>
+
+                <div class="stat-card revenue">
+                    <i class="fas fa-euro-sign"></i>
+                    <h3>Ingresos Netos</h3>
+                    <div class="value" id="total-revenue">€0</div>
+                    <div class="change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span id="revenue-growth">0%</span> este mes
+                    </div>
+                </div>
+
+                <div class="stat-card growth">
+                    <i class="fas fa-chart-line"></i>
+                    <h3>Crecimiento Total</h3>
+                    <div class="value" id="total-growth">0%</div>
+                    <div class="change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        Tendencia positiva
+                    </div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h2>Distribución por Redes Sociales</h2>
+                    <canvas id="followersChart"></canvas>
+                </div>
+
+                <div class="chart-card">
+                    <h2>Fuentes de Ingresos</h2>
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-card" style="margin-bottom: 30px;">
+                <h2>Ingresos Mensuales (€)</h2>
+                <canvas id="monthlyChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Página de Analíticas -->
+        <div id="analytics" class="page">
+            <div class="analytics-controls">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab('releases')">
+                        <i class="fas fa-compact-disc"></i> Releases
+                    </button>
+                    <button class="tab-btn" onclick="switchTab('tours')">
+                        <i class="fas fa-guitar"></i> Tours
+                    </button>
+                </div>
+
+                <!-- Tab de Releases -->
+                <div id="releases-tab" class="tab-content active">
+                    <h3 style="margin-bottom: 20px; color: #333;">
+                        <i class="fas fa-plus-circle"></i> Agregar Nuevo Release
+                    </h3>
+                    <form id="releaseForm" onsubmit="addRelease(event)">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Título *</label>
+                                <input type="text" id="release-title" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Tipo *</label>
+                                <select id="release-type" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option value="Single">Single</option>
+                                    <option value="EP">EP</option>
+                                    <option value="Álbum">Álbum</option>
+                                    <option value="Colaboración">Colaboración</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Fecha de Lanzamiento *</label>
+                                <input type="date" id="release-date" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Plataforma *</label>
+                                <select id="release-platform" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option value="Spotify">Spotify</option>
+                                    <option value="YouTube">YouTube</option>
+                                    <option value="Todas">Todas las plataformas</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Reproducciones</label>
+                                <input type="number" id="release-plays" placeholder="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Ingresos (€)</label>
+                                <input type="number" id="release-revenue" placeholder="0">
+                            </div>
+                        </div>
+                        <button type="submit" class="add-btn">
+                            <i class="fas fa-plus"></i> Agregar Release
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Tab de Tours -->
+                <div id="tours-tab" class="tab-content">
+                    <h3 style="margin-bottom: 20px; color: #333;">
+                        <i class="fas fa-plus-circle"></i> Agregar Nuevo Tour/Concierto
+                    </h3>
+                    <form id="tourForm" onsubmit="addTour(event)">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Nombre del Tour *</label>
+                                <input type="text" id="tour-name" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Ciudad *</label>
+                                <input type="text" id="tour-city" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Venue *</label>
+                                <input type="text" id="tour-venue" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Fecha *</label>
+                                <input type="date" id="tour-date" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Capacidad</label>
+                                <input type="number" id="tour-capacity" placeholder="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Entradas Vendidas</label>
+                                <input type="number" id="tour-tickets" placeholder="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Ingresos (€)</label>
+                                <input type="number" id="tour-revenue" placeholder="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Estado *</label>
+                                <select id="tour-status" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option value="Programado">Programado</option>
+                                    <option value="Completado">Completado</option>
+                                    <option value="Cancelado">Cancelado</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="add-btn">
+                            <i class="fas fa-plus"></i> Agregar Tour
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Filtros -->
+            <div class="analytics-controls">
+                <h3 style="margin-bottom: 15px; color: #333;">
+                    <i class="fas fa-filter"></i> Filtros
+                </h3>
+                <div class="filters">
+                    <div class="filter-group">
+                        <label>Tipo:</label>
+                        <select id="filter-type" onchange="applyFilters()">
+                            <option value="all">Todos</option>
+                            <option value="Single">Single</option>
+                            <option value="EP">EP</option>
+                            <option value="Álbum">Álbum</option>
+                            <option value="Colaboración">Colaboración</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Año:</label>
+                        <select id="filter-year" onchange="applyFilters()">
+                            <option value="all">Todos</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Buscar:</label>
+                        <input type="text" id="filter-search" placeholder="Título..." oninput="applyFilters()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de datos -->
+            <div class="data-list">
+                <h2 style="margin-bottom: 20px; color: #333;">
+                    <i class="fas fa-list"></i> <span id="list-title">Releases</span>
+                </h2>
+                <div id="data-container"></div>
+            </div>
+        </div>
+
+        <!-- Página de Finanzas -->
+        <div id="finance" class="page">
+            <div class="finance-header">
+                <h2><i class="fas fa-file-invoice-dollar"></i> Reporte de Facturación</h2>
+                <div class="export-buttons">
+                    <button class="export-btn excel" onclick="exportToExcel()">
+                        <i class="fas fa-file-excel"></i> Exportar Excel
+                    </button>
+                    <button class="export-btn pdf" onclick="exportToPDF()">
+                        <i class="fas fa-file-pdf"></i> Exportar PDF
+                    </button>
+                </div>
+            </div>
+
+            <div class="finance-table">
+                <table id="financeTable">
+                    <thead>
+                        <tr>
+                            <th>Mes</th>
+                            <th>Streaming</th>
+                            <th>Conciertos</th>
+                            <th>Merchandising</th>
+                            <th>Colaboraciones</th>
+                            <th>Total Bruto</th>
+                            <th>Gastos</th>
+                            <th>Ingresos Netos</th>
+                        </tr>
+                    </thead>
+                    <tbody id="financeTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Almacenamiento temporal en memoria
+        let releases = [];
+        let tours = [];
+        let currentTab = 'releases';
+
+        // Datos simulados (se regeneran cada vez que se actualiza la página)
+        function generateRandomData() {
+            return {
+                social: {
+                    instagram: Math.floor(Math.random() * 50000) + 100000,
+                    youtube: Math.floor(Math.random() * 30000) + 50000,
+                    spotify: Math.floor(Math.random() * 100000) + 200000,
+                    tiktok: Math.floor(Math.random() * 80000) + 150000
+                },
+                growth: {
+                    instagram: (Math.random() * 10 + 2).toFixed(1),
+                    youtube: (Math.random() * 8 + 1).toFixed(1),
+                    spotify: (Math.random() * 15 + 3).toFixed(1),
+                    tiktok: (Math.random() * 20 + 5).toFixed(1)
+                },
+                months: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+                revenue: []
+            };
+        }
+
+        function generateFinanceData() {
+            const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                          'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+            const data = [];
+            
+            for (let i = 0; i < 12; i++) {
+                const streaming = Math.floor(Math.random() * 3000) + 2000;
+                const concerts = Math.floor(Math.random() * 8000) + 5000;
+                const merch = Math.floor(Math.random() * 2000) + 1000;
+                const collab = Math.floor(Math.random() * 4000) + 2000;
+                const totalBruto = streaming + concerts + merch + collab;
+                const expenses = Math.floor(totalBruto * (Math.random() * 0.2 + 0.2));
+                const neto = totalBruto - expenses;
+                
+                data.push({
+                    month: months[i],
+                    streaming,
+                    concerts,
+                    merch,
+                    collab,
+                    totalBruto,
+                    expenses,
+                    neto
+                });
+            }
+            
+            return data;
+        }
+
+        const dashboardData = generateRandomData();
+        const financeData = generateFinanceData();
+
+        // Llenar datos de redes sociales
+        document.getElementById('instagram-followers').textContent = dashboardData.social.instagram.toLocaleString();
+        document.getElementById('instagram-growth').textContent = dashboardData.growth.instagram + '%';
+        document.getElementById('youtube-subs').textContent = dashboardData.social.youtube.toLocaleString();
+        document.getElementById('youtube-growth').textContent = dashboardData.growth.youtube + '%';
+        document.getElementById('spotify-listeners').textContent = dashboardData.social.spotify.toLocaleString();
+        document.getElementById('spotify-growth').textContent = dashboardData.growth.spotify + '%';
+        document.getElementById('tiktok-followers').textContent = dashboardData.social.tiktok.toLocaleString();
+        document.getElementById('tiktok-growth').textContent = dashboardData.growth.tiktok + '%';
+
+        // Calcular ingresos totales
+        const totalRevenue = financeData.reduce((sum, month) => sum + month.neto, 0);
+        document.getElementById('total-revenue').textContent = '€' + totalRevenue.toLocaleString();
+        document.getElementById('revenue-growth').textContent = '12.5%';
+        
+        const avgGrowth = ((parseFloat(dashboardData.growth.instagram) + 
+                           parseFloat(dashboardData.growth.youtube) + 
+                           parseFloat(dashboardData.growth.spotify) + 
+                           parseFloat(dashboardData.growth.tiktok)) / 4).toFixed(1);
+        document.getElementById('total-growth').textContent = avgGrowth + '%';
+
+        // Gráfico de seguidores (PIE CHART)
+        new Chart(document.getElementById('followersChart'), {
+            type: 'pie',
+            data: {
+                labels: ['Instagram', 'YouTube', 'Spotify', 'TikTok'],
+                datasets: [{
+                    data: [
+                        dashboardData.social.instagram,
+                        dashboardData.social.youtube,
+                        dashboardData.social.spotify,
+                        dashboardData.social.tiktok
+                    ],
+                    backgroundColor: [
+                        '#E1306C',
+                        '#FF0000',
+                        '#1DB954',
+                        '#000000'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed.toLocaleString();
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                return label + ': ' + value + ' (' + percentage + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Gráfico de fuentes de ingresos (PIE CHART)
+        const totalStreaming = financeData.reduce((sum, month) => sum + month.streaming, 0);
+        const totalConcerts = financeData.reduce((sum, month) => sum + month.concerts, 0);
+        const totalMerch = financeData.reduce((sum, month) => sum + month.merch, 0);
+        const totalCollab = financeData.reduce((sum, month) => sum + month.collab, 0);
+
+        new Chart(document.getElementById('revenueChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Streaming', 'Conciertos', 'Merchandising', 'Colaboraciones'],
+                datasets: [{
+                    data: [totalStreaming, totalConcerts, totalMerch, totalCollab],
+                    backgroundColor: [
+                        '#667eea',
+                        '#764ba2',
+                        '#f093fb',
+                        '#4facfe'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = '€' + context.parsed.toLocaleString();
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                return label + ': ' + value + ' (' + percentage + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Gráfico de ingresos mensuales (BARRAS)
+        new Chart(document.getElementById('monthlyChart'), {
+            type: 'bar',
+            data: {
+                labels: dashboardData.months,
+                datasets: [{
+                    label: 'Ingresos Netos',
+                    data: financeData.map(d => d.neto),
+                    backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                    borderColor: '#667eea',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Llenar tabla de finanzas
+        function populateFinanceTable() {
+            const tbody = document.getElementById('financeTableBody');
+            tbody.innerHTML = '';
+            
+            let totals = {
+                streaming: 0,
+                concerts: 0,
+                merch: 0,
+                collab: 0,
+                totalBruto: 0,
+                expenses: 0,
+                neto: 0
+            };
+            
+            financeData.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.month}</td>
+                    <td>€${row.streaming.toLocaleString()}</td>
+                    <td>€${row.concerts.toLocaleString()}</td>
+                    <td>€${row.merch.toLocaleString()}</td>
+                    <td>€${row.collab.toLocaleString()}</td>
+                    <td>€${row.totalBruto.toLocaleString()}</td>
+                    <td>€${row.expenses.toLocaleString()}</td>
+                    <td><strong>€${row.neto.toLocaleString()}</strong></td>
+                `;
+                tbody.appendChild(tr);
+                
+                totals.streaming += row.streaming;
+                totals.concerts += row.concerts;
+                totals.merch += row.merch;
+                totals.collab += row.collab;
+                totals.totalBruto += row.totalBruto;
+                totals.expenses += row.expenses;
+                totals.neto += row.neto;
+            });
+            
+            // Fila de totales
+            const totalRow = document.createElement('tr');
+            totalRow.className = 'total-row';
+            totalRow.innerHTML = `
+                <td>TOTAL ANUAL</td>
+                <td>€${totals.streaming.toLocaleString()}</td>
+                <td>€${totals.concerts.toLocaleString()}</td>
+                <td>€${totals.merch.toLocaleString()}</td>
+                <td>€${totals.collab.toLocaleString()}</td>
+                <td>€${totals.totalBruto.toLocaleString()}</td>
+                <td>€${totals.expenses.toLocaleString()}</td>
+                <td><strong>€${totals.neto.toLocaleString()}</strong></td>
+            `;
+            tbody.appendChild(totalRow);
+        }
+
+        populateFinanceTable();
+
+        // Navegación entre páginas
+        function showPage(pageName) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            document.getElementById(pageName).classList.add('active');
+            event.target.closest('.nav-btn').classList.add('active');
+        }
+
+        // Funciones para analíticas
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // Cambiar tabs
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tab + '-tab').classList.add('active');
+            
+            // Actualizar título y mostrar datos
+            document.getElementById('list-title').textContent = tab === 'releases' ? 'Releases' : 'Tours';
+            displayData();
+            updateYearFilter();
+        }
+
+        function addRelease(event) {
+            event.preventDefault();
+            
+            const release = {
+                id: Date.now(),
+                title: document.getElementById('release-title').value,
+                type: document.getElementById('release-type').value,
+                date: document.getElementById('release-date').value,
+                platform: document.getElementById('release-platform').value,
+                plays: parseInt(document.getElementById('release-plays').value) || 0,
+                revenue: parseInt(document.getElementById('release-revenue').value) || 0
+            };
+            
+            releases.push(release);
+            document.getElementById('releaseForm').reset();
+            displayData();
+            updateYearFilter();
+        }
+
+        function addTour(event) {
+            event.preventDefault();
+            
+            const tour = {
+                id: Date.now(),
+                name: document.getElementById('tour-name').value,
+                city: document.getElementById('tour-city').value,
+                venue: document.getElementById('tour-venue').value,
+                date: document.getElementById('tour-date').value,
+                capacity: parseInt(document.getElementById('tour-capacity').value) || 0,
+                tickets: parseInt(document.getElementById('tour-tickets').value) || 0,
+                revenue: parseInt(document.getElementById('tour-revenue').value) || 0,
+                status: document.getElementById('tour-status').value
+            };
+            
+            tours.push(tour);
+            document.getElementById('tourForm').reset();
+            displayData();
+            updateYearFilter();
+        }
+
+        function deleteItem(id) {
+            if (confirm('¿Estás seguro de eliminar este elemento?')) {
+                if (currentTab === 'releases') {
+                    releases = releases.filter(r => r.id !== id);
+                } else {
+                    tours = tours.filter(t => t.id !== id);
+                }
+                displayData();
+            }
+        }
+
+        function displayData() {
+            const container = document.getElementById('data-container');
+            const data = currentTab === 'releases' ? releases : tours;
+            
+            if (data.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>No hay ${currentTab === 'releases' ? 'releases' : 'tours'} registrados</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Aplicar filtros
+            let filteredData = filterData(data);
+            
+            if (filteredData.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <p>No se encontraron resultados</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Ordenar por fecha (más reciente primero)
+            filteredData.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            container.innerHTML = filteredData.map(item => {
+                if (currentTab === 'releases') {
+                    return `
+                        <div class="data-item">
+                            <div class="data-item-header">
+                                <div class="data-item-title">
+                                    <i class="fas fa-compact-disc"></i> ${item.title}
+                                </div>
+                                <div class="data-item-actions">
+                                    <button class="delete-btn" onclick="deleteItem(${item.id})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="data-item-info">
+                                <div>
+                                    <div class="info-label">Tipo</div>
+                                    <div class="info-value">${item.type}</div>
+                                </div>
+                                <div>
+                                    <div class="info-label">Fecha</div>
+                                    <div class="info-value">${formatDate(item.date)}</div>
+                                </div>
+                                <div>
+                                    <div class="info-label">Plataforma</div>
+                                    <div class="info-value">${item.platform}</div>
+                                </div>
+                                <div>
+                                    <div class="info-label">Reproducciones</div>
+                                    <div class="info-value">${item.plays.toLocaleString()}</div>
+                                </div>
+                                <div>
+                                    <div class="info-label">Ingresos</div>
+                                    <div class="info-value">€${item.revenue.toLocaleString()}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    const percentage = item.capacity > 0 ? ((item.tickets / item.capacity) * 100).toFixed(1) : 0;
+                    return `
+                        <div class="data-item">
+                            <div class="data-item-header">
+                                <div class="data-item-title">
+                                    <i class="fas fa-guitar"></i> ${item.name}
+                                </div>
+                                <div class="data-item-actions">
+                                    <button class="delete-btn" onclick="deleteItem(${item.id})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="data-item-info">
+                                <div>
+                                    <div class="info-label">Ciudad</div>
+                                    <div class="info-value">${item.city}</div>
+                                </div>
+                                <div>
+                                    <div class="info-label">Venue</div>
+                                    <div class="info-value">${item.venue}</div>
+                                </div>
+                                <div>
+                                    <div class="info-label">Fecha</div>
+                                    <div class="info-value">${formatDate(item.date)}</div>
+                                </div>
+                                <div>
+                                    <div class="info-label">Entradas Vendidas</div>
+                                    <div class="info-value">${item.tickets.toLocaleString()} / ${item.capacity.toLocaleString()} (${percentage}%)</div>
+                                </div>
+                                <div>
+                                    <div class="info-label">Ingresos</div>
+                                    <div class="info-value">€${item.revenue.toLocaleString()}</div>
+                                </div>
+                                <div>
+                                    <div class="info-label">Estado</div>
+                                    <div class="info-value">${item.status}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
+        }
+
+        function filterData(data) {
+            const typeFilter = document.getElementById('filter-type').value;
+            const yearFilter = document.getElementById('filter-year').value;
+            const searchFilter = document.getElementById('filter-search').value.toLowerCase();
+            
+            return data.filter(item => {
+                const matchType = typeFilter === 'all' || (currentTab === 'releases' && item.type === typeFilter);
+                const itemYear = new Date(item.date).getFullYear().toString();
+                const matchYear = yearFilter === 'all' || itemYear === yearFilter;
+                const searchField = currentTab === 'releases' ? item.title.toLowerCase() : item.name.toLowerCase();
+                const matchSearch = searchField.includes(searchFilter);
+                
+                return matchType && matchYear && matchSearch;
+            });
+        }
+
+        function applyFilters() {
+            displayData();
+        }
+
+        function updateYearFilter() {
+            const yearSelect = document.getElementById('filter-year');
+            const data = currentTab === 'releases' ? releases : tours;
+            const years = [...new Set(data.map(item => new Date(item.date).getFullYear()))].sort((a, b) => b - a);
+            
+            const currentValue = yearSelect.value;
+            yearSelect.innerHTML = '<option value="all">Todos</option>';
+            years.forEach(year => {
+                yearSelect.innerHTML += `<option value="${year}">${year}</option>`;
+            });
+            yearSelect.value = currentValue;
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+
+        // Inicializar filtros de año
+        updateYearFilter();
+
+        // Exportar a Excel
+        function exportToExcel() {
+            const wb = XLSX.utils.book_new();
+            const wsData = [
+                ['Mes', 'Streaming', 'Conciertos', 'Merchandising', 'Colaboraciones', 'Total Bruto', 'Gastos', 'Ingresos Netos']
+            ];
+            
+            financeData.forEach(row => {
+                wsData.push([
+                    row.month,
+                    row.streaming,
+                    row.concerts,
+                    row.merch,
+                    row.collab,
+                    row.totalBruto,
+                    row.expenses,
+                    row.neto
+                ]);
+            });
+            
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            XLSX.utils.book_append_sheet(wb, ws, 'Facturación');
+            XLSX.writeFile(wb, 'Facturacion_Artista.xlsx');
+        }
+
+        // Exportar a PDF
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFontSize(18);
+            doc.text('Reporte de Facturación - Dashboard Artista', 14, 20);
+            
+            doc.setFontSize(12);
+            let y = 35;
+            
+            doc.text('Mes', 14, y);
+            doc.text('Streaming', 40, y);
+            doc.text('Conciertos', 70, y);
+            doc.text('Merch', 100, y);
+            doc.text('Colabs', 125, y);
+            doc.text('T.Bruto', 150, y);
+            doc.text('Gastos', 175, y);
+            doc.text('Neto', 195, y);
+            
+            y += 7;
+            doc.setFontSize(10);
+            
+            financeData.forEach(row => {
+                doc.text(row.month.substring(0, 3), 14, y);
+                doc.text('€' + row.streaming.toLocaleString(), 40, y);
+                doc.text('€' + row.concerts.toLocaleString(), 70, y);
+                doc.text('€' + row.merch.toLocaleString(), 100, y);
+                doc.text('€' + row.collab.toLocaleString(), 125, y);
+                doc.text('€' + row.totalBruto.toLocaleString(), 150, y);
+                doc.text('€' + row.expenses.toLocaleString(), 175, y);
+                doc.text('€' + row.neto.toLocaleString(), 195, y);
+                y += 7;
+            });
+            
+            doc.save('Facturacion_Artista.pdf');
+        }
+    </script>
+</body>
+</html>
